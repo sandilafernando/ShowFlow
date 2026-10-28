@@ -1,0 +1,52 @@
+appId: com.showflow.app
+productName: ShowFlow
+copyright: Copyright © 2026 Sandila Fernando. All rights reserved.
+directories:
+  output: release
+  buildResources: build
+files:
+  - dist/**/*
+  - electron/**/*
+  - shared/**/*
+  - package.json
+  - '!**/*.map'
+extraResources:
+  - from: node_modules/sql.js/dist/sql-wasm.wasm
+    to: sql-wasm.wasm
+  - from: build/icon.png
+    to: icon.png
+asar: true
+compression: normal
+win:
+  icon: build/icon.ico
+  target:
+    - target: nsis
+      arch:
+        - x64
+    - target: portable
+      arch:
+        - x64
+  requestedExecutionLevel: asInvoker
+  artifactName: ShowFlow-${version}-Windows-${target}.${ext}
+nsis:
+  oneClick: false
+  perMachine: false
+  allowElevation: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: ShowFlow
+  uninstallDisplayName: ShowFlow
+  installerIcon: build/icon.ico
+  uninstallerIcon: build/icon.ico
+  installerHeaderIcon: build/icon.ico
+  installerHeader: build/installerHeader.bmp
+  installerSidebar: build/installerSidebar.bmp
+  deleteAppDataOnUninstall: false
+  runAfterFinish: true
+  menuCategory: ShowFlow
+  artifactName: ShowFlow-${version}-Windows-Setup.${ext}
+portable:
+  artifactName: ShowFlow-${version}-Windows-Portable.${ext}
+  requestExecutionLevel: user
+  unpackDirName: ShowFlow-${version}

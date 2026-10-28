@@ -1,0 +1,91 @@
+name: Windows release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  CI: 'true'
+  # Signing is not configured. Do not let electron-builder search for a local
+  # certificate on the runner.
+  CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+
+jobs:
+  release:
+    name: Build and draft Windows release
+    runs-on: windows-latest
+    timeout-minutes: 75
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate build artwork
+        run: npm run icons
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Unit and integration tests
+        run: npm test
+
+      - name: Source Electron E2E
+        run: npm run test:e2e
+
+      - name: Build installer, portable executable and unpacked app
+        run: npm run dist
+
+      - name: Packaged application smoke test
+        run: npm run test:e2e:packaged
+
+      - name: Write SHA-256 checksums
+        run: npm run checksums
+
+      - name: Verify SHA-256 checksums
+        run: npm run checksums -- --verify
+
+      - name: Upload workflow artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: showflow-${{ github.ref_name }}
+          path: |
+            release/ShowFlow-*-Windows-Setup.exe
+            release/ShowFlow-*-Windows-Portable.exe
+            release/*.blockmap
+            release/SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 30
+
+      # The release is a draft on purpose. A maintainer must inspect the
+      # artifacts and checksums before publishing. No signing is performed.
+      - name: Create draft GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: true
+          generate_release_notes: false
+          name: ShowFlow ${{ github.ref_name }}
+          tag_name: ${{ github.ref_name }}
+          body_path: docs/RELEASE_NOTES.md
+          fail_on_unmatched_files: true
+          files: |
+            release/ShowFlow-*-Windows-Setup.exe
+            release/ShowFlow-*-Windows-Portable.exe
+            release/*.blockmap
+            release/SHA256SUMS.txt
